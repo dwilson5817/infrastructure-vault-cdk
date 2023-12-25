@@ -8,7 +8,7 @@ sast:
 cdk-deploy:
   id_tokens:
     GITLAB_OIDC_TOKEN:
-      aud: https://gitlab.dylanwilson.dev
+      aud: https://gitlab.dylanw.dev
   image: gitlab.dylanw.dev:5050/images/nodejs-aws-cli:latest
   stage: deploy
   script:
