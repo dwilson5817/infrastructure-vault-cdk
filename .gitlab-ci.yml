@@ -38,7 +38,7 @@ cdk-deploy:
     - npm run cdk deploy -- --require-approval=never
 
 ansible-configure:
-  image: willhallonline/ansible:2.15-alpine-3.16
+  image: willhallonline/ansible:2.15.2-bullseye
   stage: configure
   script:
     - apk add --no-cache py3-botocore py3-boto3
