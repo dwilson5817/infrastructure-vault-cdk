@@ -1,0 +1,40 @@
+---
+
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Install unzip
+      ansible.builtin.package:
+        name: unzip
+        state: present
+
+    - name: Unarchive AWS CLI bundle
+      ansible.builtin.unarchive:
+        src: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /
+        remote_src: yes
+
+    - name: Install the AWS CLI
+      shell: /aws/install
+
+    - name: Generate an SSH which will be used to connect to the EC2 instance
+      community.crypto.openssh_keypair:
+        path: ~/id_rsa
+
+- hosts: all
+  vars:
+    ansible_ssh_private_key_file: ~/id_rsa
+  gather_facts: no
+  tasks:
+    - name: Tell EC2 Instance Connect about our SSH key
+      ansible.builtin.shell: >-
+        aws ec2-instance-connect send-ssh-public-key
+        --region {{ hostvars.placement.region }}
+        --availability-zone {{ hostvars.placement.availability_zone }}
+        --instance-id {{ hostvars.instance_id }}
+        --instance-os-user ec2-user
+        --ssh-public-key file://~/id_rsa
+      delegate_to: 127.0.0.1
+
+    - name: Get uptime information
+      ansible.builtin.shell: /usr/bin/uptime

@@ -43,7 +43,7 @@ ansible-configure:
   script:
     - apk add --no-cache py3-botocore py3-boto3
     - ansible-galaxy install -r requirements.yml
-    - ansible-inventory --list -i inventory.aws_ec2.yml
+    - ansible-playbook -i inventory.aws_ec2.yml playbook.yml
 
 include:
   - template: Security/SAST.gitlab-ci.yml
