@@ -2,6 +2,7 @@ stages:
   - test
   - authenticate
   - deploy
+  - configure
 
 sast:
   stage: test
@@ -28,9 +29,6 @@ aws-auth:
       dotenv: aws.env
 
 cdk-deploy:
-  id_tokens:
-    GITLAB_OIDC_TOKEN:
-      aud: https://gitlab.dylanw.dev
   image: gitlab.dylanw.dev:5050/images/nodejs-aws-cli:latest
   stage: deploy
   script:
@@ -38,6 +36,13 @@ cdk-deploy:
     - npm run build
     - npm run cdk bootstrap
     - npm run cdk deploy -- --require-approval=never
+
+ansible-configure:
+  image: willhallonline/ansible:2.15-alpine-3.16
+  stage: configure
+  script:
+    - ansible-galaxy install -r requirements.yml
+    - ansible-inventory --list -i inventory.aws_ec2.yml
 
 include:
   - template: Security/SAST.gitlab-ci.yml
