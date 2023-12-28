@@ -42,7 +42,7 @@ ansible-configure:
   stage: configure
   script:
     - apt update
-    - apt install python3-botocore python3-boto3
+    - apt install -y python3-botocore python3-boto3
     - ansible-galaxy install -r requirements.yml
     - ansible-playbook -i inventory.aws_ec2.yml playbook.yml
 
