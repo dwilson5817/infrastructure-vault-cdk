@@ -39,7 +39,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
           ec2.InstanceSize.MICRO
       ),
       machineImage: new ec2.AmazonLinuxImage({
-        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
+        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023
       }),
     })
   }
