@@ -29,9 +29,9 @@
     - name: Tell EC2 Instance Connect about our SSH key
       ansible.builtin.shell: >-
         aws ec2-instance-connect send-ssh-public-key
-        --region {{ hostvars.placement.region }}
-        --availability-zone {{ hostvars.placement.availability_zone }}
-        --instance-id {{ hostvars.instance_id }}
+        --region {{ placement.region }}
+        --availability-zone {{ placement.availability_zone }}
+        --instance-id {{ instance_id }}
         --instance-os-user ec2-user
         --ssh-public-key file://~/id_rsa
       delegate_to: 127.0.0.1
