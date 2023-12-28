@@ -1,9 +1,31 @@
 stages:
   - test
+  - authenticate
   - deploy
 
 sast:
   stage: test
+
+aws-auth:
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.dylanw.dev
+  image: gitlab.dylanw.dev:5050/images/nodejs-aws-cli:latest
+  stage: authenticate
+  script:
+    - >
+      printf "AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\nAWS_SESSION_TOKEN=%s"
+      $(aws sts assume-role-with-web-identity
+      --role-arn ${ROLE_ARN}
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token ${GITLAB_OIDC_TOKEN}
+      --duration-seconds 3600
+      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+      --output text)
+      > aws.env
+  artifacts:
+    reports:
+      dotenv: aws.env
 
 cdk-deploy:
   id_tokens:
@@ -12,18 +34,6 @@ cdk-deploy:
   image: gitlab.dylanw.dev:5050/images/nodejs-aws-cli:latest
   stage: deploy
   script:
-    - apk --no-cache add curl zip
-    - export AWS_DEFAULT_REGION=eu-west-1
-    - >
-      export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
-      $(aws sts assume-role-with-web-identity
-      --role-arn ${ROLE_ARN}
-      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
-      --web-identity-token ${GITLAB_OIDC_TOKEN}
-      --duration-seconds 3600
-      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
-      --output text))
-    - aws sts get-caller-identity
     - npm install --progress=false
     - npm run build
     - npm run cdk bootstrap
