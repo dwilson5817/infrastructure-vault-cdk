@@ -33,7 +33,7 @@
         --availability-zone {{ placement.availability_zone }}
         --instance-id {{ instance_id }}
         --instance-os-user ec2-user
-        --ssh-public-key file://~/id_rsa
+        --ssh-public-key file://~/id_rsa.pub
       delegate_to: 127.0.0.1
 
     - name: Get uptime information
