@@ -41,8 +41,7 @@ ansible-configure:
   image: willhallonline/ansible:2.15.2-bullseye
   stage: configure
   script:
-    - apt update
-    - apt install -y python3-botocore python3-boto3
+    - pip3 install botocore boto3
     - ansible-galaxy install -r requirements.yml
     - ansible-playbook -i inventory.aws_ec2.yml playbook.yml
 
