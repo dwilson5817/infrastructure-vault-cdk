@@ -1,0 +1,132 @@
+---
+
+- name: Ensure group "certs" exists
+  ansible.builtin.group:
+    name: certs
+    state: present
+
+- name: Create required directories for ACME
+  file:
+    path: "{{ acme_location }}/{{ item }}"
+    state: directory
+    owner: root
+    group: certs
+    mode: u=rwx,g=rx
+  loop:
+  - account
+  - certs
+  - csrs
+  - keys
+
+- name: Install Python OpenSSL library which is required by community.crypto
+  ansible.builtin.pip:
+    name:
+      - pyOpenSSL
+      - dnspython
+
+- name: Generate an OpenSSL private key for ACME account
+  community.crypto.openssl_privatekey:
+    path: "{{ acme_location }}/account/account.pem"
+    owner: root
+    group: certs
+
+- name: "Create directory for {{ acme_cert_domain }} in certificates directory"
+  file:
+    path: "{{ acme_location }}/certs/{{ acme_cert_domain }}"
+    state: directory
+    owner: root
+    group: certs
+    mode: u=rwx,g=rx
+
+- name: "Generate an OpenSSL private key for {{ acme_cert_domain }} to sign a CSR"
+  community.crypto.openssl_privatekey:
+    path: "{{ acme_location }}/keys/{{ acme_cert_domain }}.pem"
+    owner: root
+    group: certs
+    mode: u=rw,g=r
+
+- name: "Generate an OpenSSL certificate signing request for {{ acme_cert_domain }}"
+  community.crypto.openssl_csr:
+    path: "{{ acme_location }}/csrs/{{ acme_cert_domain }}.csr"
+    privatekey_path: "{{ acme_location }}/keys/{{ acme_cert_domain }}.pem"
+    common_name: "{{ acme_cert_domain }}"
+
+- name: "Attempt challenge validation for {{ acme_cert_domain }} but always remove TXT record(s)"
+  block:
+    - name: "Create a DNS challenge for {{ acme_cert_domain }}"
+      community.crypto.acme_certificate:
+        account_key: "{{ acme_location }}/account/account.pem"
+        account_email: "{{ acme_contact }}"
+        acme_directory: "{{ acme_directory }}"
+        acme_version: 2
+        terms_agreed: true
+        csr: "{{ acme_location }}/csrs/{{ acme_cert_domain }}.csr"
+        cert: "{{ acme_location }}/certs/{{ acme_cert_domain }}/cert.pem"
+        fullchain_dest: "{{ acme_location }}/certs/{{ acme_cert_domain }}/fullchain.pem"
+        challenge: dns-01
+        remaining_days: 60
+      register: dns_challenge
+
+    - name: "Create TXT record(s) for {{ acme_cert_domain }} on CloudFlare DNS to complete challenge"
+      community.general.cloudflare_dns:
+        zone: "{{ cloudflare_zone }}"
+        record: "{{ challenge.key }}"
+        type: TXT
+        value: "{{ ' '.join(challenge.value) }}"
+      loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
+      loop_control:
+        loop_var: challenge
+      when: dns_challenge is changed
+
+    - name: Wait for a TXT entry to appear
+      community.dns.wait_for_txt:
+        records:
+          - name: "{{ challenge.key }}"
+            values: "{{ ' '.join(challenge.value) }}"
+            mode: equals
+      loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
+      loop_control:
+        loop_var: challenge
+      when: dns_challenge is changed
+
+    - name: "Validate the challenge for {{ acme_cert_domain }} and retrieve the certificate"
+      community.crypto.acme_certificate:
+        account_key: "{{ acme_location }}/account/account.pem"
+        account_email: "{{ acme_contact }}"
+        acme_directory: "{{ acme_directory }}"
+        acme_version: 2
+        terms_agreed: true
+        csr: "{{ acme_location }}/csrs/{{ acme_cert_domain }}.csr"
+        cert: "{{ acme_location }}/certs/{{ acme_cert_domain }}/cert.pem"
+        fullchain_dest: "{{ acme_location }}/certs/{{ acme_cert_domain }}/fullchain.pem"
+        challenge: dns-01
+        remaining_days: 60
+        data: "{{ dns_challenge }}"
+      when: dns_challenge is changed
+      register: result
+      until: result is not failed
+
+    - name: Set certificate owner and group
+      ansible.builtin.file:
+        path: "{{ file }}"
+        owner: root
+        group: certs
+        mode: '640'
+      loop:
+        - "{{ acme_location }}/certs/{{ acme_cert_domain }}/cert.pem"
+        - "{{ acme_location }}/certs/{{ acme_cert_domain }}/fullchain.pem"
+      loop_control:
+        loop_var: file
+
+  always:
+    - name: "Delete TXT record(s) for {{ acme_cert_domain }} from CloudFlare DNS"
+      community.general.cloudflare_dns:
+        zone: "{{ cloudflare_zone }}"
+        record: "{{ challenge.key }}"
+        type: TXT
+        value: "{{ ' '.join(challenge.value) }}"
+        state: absent
+      loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
+      loop_control:
+        loop_var: challenge
+      when: dns_challenge is changed

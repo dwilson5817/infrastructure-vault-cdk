@@ -4,6 +4,7 @@ storage "dynamodb" {
 }
 
 listener "tcp" {
-    address     = "0.0.0.0:8200"
-    tls_disable = 1
+    address       = "0.0.0.0:443"
+    tls_cert_file = "/etc/acme/certs/vault.dylanw.net/fullchain.pem"
+    tls_key_file  = "/etc/acme/keys/vault.dylanw.net.pem"
 }

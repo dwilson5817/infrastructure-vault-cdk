@@ -48,5 +48,20 @@
         vault_storage_dynamodb_table_name: "{{ cfn_output.cloudformation.InfrastructureVaultStack.stack_outputs.VaultStorageTableName }}"
 
   roles:
+    - name: acme
+      vars:
+        acme_cert_domain: vault.dylanw.net
+        acme_contact: admin@dylanw.net
+        cloudflare_zone: dylanw.net
+      become: yes
     - name: vault
       become: yes
+
+  post_tasks:
+    - name: Create A record for on CloudFlare DNS
+      community.general.cloudflare_dns:
+        zone: dylanw.net
+        record: vault
+        type: A
+        value: "{{ public_ip_address }}"
+      delegate_to: 127.0.0.1

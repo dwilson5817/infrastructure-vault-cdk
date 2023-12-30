@@ -8,6 +8,8 @@
   ansible.builtin.user:
     name: "{{ vault_user }}"
     group: "{{ vault_group }}"
+    groups: certs
+    append: true
     system: yes
     shell: "/sbin/nologin"
     create_home: "no"
