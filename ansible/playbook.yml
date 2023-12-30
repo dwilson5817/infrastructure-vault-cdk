@@ -37,11 +37,15 @@
         --ssh-public-key file://~/id_rsa.pub
       delegate_to: 127.0.0.1
 
-    - name: Get summary information about a stack
+    - name: Get summary information about the CloudFormation stack
       amazon.aws.cloudformation_info:
         stack_name: InfrastructureVaultStack
       register: cfn_output
       delegate_to: 127.0.0.1
 
+    - name: Set DynamoDB table name as fact
+      ansible.builtin.set_fact:
+        vault_storage_dynamodb_table_name: "{{ cfn_output.cloudformation.InfrastructureVaultStack.stack_outputs.VaultStorageTableName }}"
+
     - debug:
-        var: cfn_output
+        var: vault_storage_dynamodb_table_name
