@@ -41,6 +41,7 @@
       amazon.aws.cloudformation_info:
         stack_name: InfrastructureVaultStack
       register: cfn_output
+      delegate_to: 127.0.0.1
 
     - debug:
         var: cfn_output
