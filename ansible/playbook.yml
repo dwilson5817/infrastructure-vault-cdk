@@ -37,5 +37,10 @@
         --ssh-public-key file://~/id_rsa.pub
       delegate_to: 127.0.0.1
 
-    - name: Get uptime information
-      ansible.builtin.shell: /usr/bin/uptime
+    - name: Get summary information about a stack
+      amazon.aws.cloudformation_info:
+        stack_name: InfrastructureVaultStack
+      register: cfn_output
+
+    - debug:
+        var: cfn_output
