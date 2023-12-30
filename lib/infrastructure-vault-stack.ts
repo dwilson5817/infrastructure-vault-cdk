@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 
 export class InfrastructureVaultStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -30,7 +31,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
         'Allows HTTPS access from Internet'
     )
 
-    new ec2.Instance(this, 'vault-instance-1', {
+    const instance = new ec2.Instance(this, 'vault-instance-1', {
       vpc: defaultVpc,
       securityGroup: securityGroup,
       instanceName: 'vault-instance-1',
@@ -42,5 +43,11 @@ export class InfrastructureVaultStack extends cdk.Stack {
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023
       }),
     })
+
+    const table = new dynamodb.TableV2(this, 'VaultStorage', {
+      partitionKey: { name: 'Key', type: dynamodb.AttributeType.STRING },
+    })
+
+    table.grantFullAccess(instance)
   }
 }
