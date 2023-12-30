@@ -42,8 +42,8 @@ ansible-configure:
   stage: configure
   script:
     - pip3 install botocore boto3
-    - ansible-galaxy install -r requirements.yml
-    - ansible-playbook -i inventory.aws_ec2.yml playbook.yml
+    - ansible-galaxy install -r ansible/requirements.yml
+    - ansible-playbook -i ansible/inventory.aws_ec2.yml ansible/playbook.yml
 
 include:
   - template: Security/SAST.gitlab-ci.yml
