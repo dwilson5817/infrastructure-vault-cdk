@@ -49,5 +49,10 @@ export class InfrastructureVaultStack extends cdk.Stack {
     })
 
     table.grantFullAccess(instance)
+
+    new cdk.CfnOutput(this, 'DynamoDBTableNameOutput', {
+      value: table.tableName,
+      exportName: 'VaultStorageTableName',
+    })
   }
 }
