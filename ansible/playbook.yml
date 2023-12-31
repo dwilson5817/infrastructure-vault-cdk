@@ -47,15 +47,23 @@
       ansible.builtin.set_fact:
         vault_storage_dynamodb_table_name: "{{ cfn_output.cloudformation.InfrastructureVaultStack.stack_outputs.VaultStorageTableName }}"
 
+    - name: Install Nginx
+      ansible.builtin.package:
+        name: nginx
+        state: present
+
+    - name: Ensure Nginx is started and enabled
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: started
+        enabled: true
+
   roles:
     - name: acme
       vars:
         acme_cert_domain: vault.dylanw.net
         acme_contact: admin@dylanw.net
         cloudflare_zone: dylanw.net
-      become: yes
-      
-    - role: nginxinc.nginx
       become: yes
 
     - role: nginxinc.nginx_config
