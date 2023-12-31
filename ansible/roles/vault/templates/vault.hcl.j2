@@ -4,7 +4,11 @@ storage "dynamodb" {
 }
 
 listener "tcp" {
-    address       = "0.0.0.0:443"
-    tls_cert_file = "/etc/acme/certs/vault.dylanw.net/fullchain.pem"
-    tls_key_file  = "/etc/acme/keys/vault.dylanw.net.pem"
+    address     = "127.0.0.1:8200"
+    tls_disable = 1
 }
+
+api_addr          = "http://127.0.0.1:8200"
+default_lease_ttl = "10h"
+max_lease_ttl     = "10h"
+ui                = true

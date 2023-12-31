@@ -1,2 +1,3 @@
-collections:
-  - name: amazon.aws
+roles:
+- name: nginxinc.nginx
+- name: nginxinc.nginx_config
