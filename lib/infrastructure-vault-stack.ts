@@ -11,11 +11,11 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     const securityGroup = new ec2.SecurityGroup(
         this,
-        'vault-instance-1-security-group',
+        'VaultServerSecurityGroup',
         {
           vpc: defaultVpc,
           allowAllOutbound: true,
-          securityGroupName: 'vault-instance-1-security-group',
+          securityGroupName: 'VaultServerSecurityGroup',
         }
     )
 
@@ -31,7 +31,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
         'Allows HTTPS access from Internet'
     )
 
-    const instance = new ec2.Instance(this, 'vault-instance-1', {
+    const instance = new ec2.Instance(this, 'VaultServerInstance1', {
       vpc: defaultVpc,
       securityGroup: securityGroup,
       instanceName: 'vault-instance-1',
