@@ -19,10 +19,10 @@
   - keys
 
 - name: Install Python OpenSSL library which is required by community.crypto
-  ansible.builtin.pip:
+  ansible.builtin.package:
     name:
-      - pyOpenSSL
-      - dnspython
+      - python3-pyOpenSSL
+      - python3-dns
 
 - name: Generate an OpenSSL private key for ACME account
   community.crypto.openssl_privatekey:
