@@ -41,6 +41,8 @@ export class InfrastructureVaultStack extends cdk.Stack {
       }),
     })
 
+    cdk.Tags.of(instance).add('Role', 'VaultServer');
+
     const table = new dynamodb.TableV2(this, 'VaultStorage', {
       partitionKey: { name: 'Path', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'Key', type: dynamodb.AttributeType.STRING },
@@ -61,7 +63,12 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
       name: 'AWS-ApplyAnsiblePlaybooks',
-      instanceId: instance.instanceId,
+      targets: [{
+        key: 'Role',
+        values: [
+            'VaultServer'
+        ],
+      }],
       parameters: {
         SourceType: [
             "S3"
