@@ -48,12 +48,8 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     table.grantFullAccess(instance)
 
-    const ansibleConfigurationBucket = new s3.Bucket(scope, 'AnsibleConfigurationBucket', {
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      enforceSSL: true,
-      versioned: true,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    const ansibleConfigurationBucket = new s3.Bucket(this, 'AnsibleConfigurationBucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     new s3deployment.BucketDeployment(this, 'DeployFiles', {
