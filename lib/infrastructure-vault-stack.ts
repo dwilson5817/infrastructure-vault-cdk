@@ -63,13 +63,21 @@ export class InfrastructureVaultStack extends cdk.Stack {
       name: 'AWS-ApplyAnsiblePlaybooks',
       instanceId: instance.instanceId,
       parameters: {
-        SourceType: "S3",
+        SourceType: [
+            "S3"
+        ],
         SourceInfo: [
             `{ "path": "${ ansibleConfigurationBucket.bucketDomainName }" }`
         ],
-        InstallDependencies: true,
-        PlaybookFile: "playbook.yml",
-        ExtraVariables: `vault_storage_dynamodb_table_name=${ table.tableName }`,
+        InstallDependencies: [
+            "True"
+        ],
+        PlaybookFile: [
+            "playbook.yml"
+        ],
+        ExtraVariables: [
+            `vault_storage_dynamodb_table_name=${ table.tableName }`
+        ],
       }
     });
   }
