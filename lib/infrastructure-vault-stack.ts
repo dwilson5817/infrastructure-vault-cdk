@@ -2,6 +2,9 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3deployment from 'aws-cdk-lib/aws-s3-deployment';
 
 export class InfrastructureVaultStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -17,12 +20,6 @@ export class InfrastructureVaultStack extends cdk.Stack {
           allowAllOutbound: true,
           securityGroupName: 'VaultServerSecurityGroup',
         }
-    )
-
-    securityGroup.addIngressRule(
-        ec2.Peer.anyIpv4(),
-        ec2.Port.tcp(22),
-        'Allows SSH access from Internet'
     )
 
     securityGroup.addIngressRule(
@@ -51,8 +48,33 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     table.grantFullAccess(instance)
 
-    new cdk.CfnOutput(this, 'VaultStorageTableName', {
-      value: table.tableName,
-    })
+    const ansibleConfigurationBucket = new s3.Bucket(scope, 'AnsibleConfigurationBucket', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      versioned: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    new s3deployment.BucketDeployment(this, 'DeployFiles', {
+      sources: [
+          s3deployment.Source.asset('./ansible')
+      ],
+      destinationBucket: ansibleConfigurationBucket,
+    });
+
+    new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
+      name: 'AWS-ApplyAnsiblePlaybooks',
+      instanceId: instance.instanceId,
+      parameters: {
+        SourceType: "S3",
+        SourceInfo: [
+            `{ "path": "${ ansibleConfigurationBucket.bucketDomainName }" }`
+        ],
+        InstallDependencies: true,
+        PlaybookFile: "playbook.yml",
+        ExtraVariables: `vault_storage_dynamodb_table_name=${ table.tableName }`,
+      }
+    });
   }
 }

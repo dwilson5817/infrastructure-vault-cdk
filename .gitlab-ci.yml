@@ -37,13 +37,13 @@ cdk-deploy:
     - npm run cdk bootstrap
     - npm run cdk deploy -- --require-approval=never
 
-ansible-configure:
-  image: willhallonline/ansible:2.15.2-bullseye
-  stage: configure
-  script:
-    - pip3 install botocore boto3
-    - ansible-galaxy install -r ansible/requirements.yml
-    - ansible-playbook -i ansible/inventory.aws_ec2.yml ansible/playbook.yml
+#ansible-configure:
+#  image: willhallonline/ansible:2.15.2-bullseye
+#  stage: configure
+#  script:
+#    - pip3 install botocore boto3
+#    - ansible-galaxy install -r ansible/requirements.yml
+#    - ansible-playbook -i ansible/inventory.aws_ec2.yml ansible/playbook.yml
 
 include:
   - template: Security/SAST.gitlab-ci.yml
