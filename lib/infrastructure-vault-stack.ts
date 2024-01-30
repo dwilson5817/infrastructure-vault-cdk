@@ -64,7 +64,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
     new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
       name: 'AWS-ApplyAnsiblePlaybooks',
       targets: [{
-        key: 'Role',
+        key: 'tag:Role',
         values: [
             'VaultServer'
         ],
