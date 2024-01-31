@@ -54,9 +54,13 @@ export class InfrastructureVaultStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    ansibleConfigurationBucket.grantRead(instance)
+
     const ansibleExecutionLogsBucket = new s3.Bucket(this, 'AnsibleExecutionLogsBucket', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+
+    ansibleExecutionLogsBucket.grantPut(instance)
 
     new s3deployment.BucketDeployment(this, 'DeployFiles', {
       sources: [
