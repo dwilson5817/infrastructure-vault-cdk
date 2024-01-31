@@ -4,7 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as s3deployment from 'aws-cdk-lib/aws-s3-deployment';
+import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
 
 export class InfrastructureVaultStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -62,12 +62,11 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     ansibleExecutionLogsBucket.grantPut(instance)
 
-    new s3deployment.BucketDeployment(this, 'DeployFiles', {
-      sources: [
-          s3deployment.Source.asset('./ansible')
-      ],
-      destinationBucket: ansibleConfigurationBucket,
+    const asset = new s3asset.Asset(this, 'BundledAsset', {
+      path: './ansible',
     });
+
+    asset.bucket.grantRead(instance)
 
     new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
       name: 'AWS-ApplyAnsiblePlaybooks',
@@ -87,7 +86,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
             "S3"
         ],
         SourceInfo: [
-            `{ "path": "${ ansibleConfigurationBucket.bucketDomainName }" }`
+            `{ "path": "${ asset.httpUrl }" }`
         ],
         InstallDependencies: [
             "True"
