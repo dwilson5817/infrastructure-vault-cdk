@@ -2,7 +2,12 @@
 
 - hosts: all
   pre_tasks:
+    - name: Install collections and roles from Galaxy
+      community.general.ansible_galaxy_install:
+        type: both
+        requirements_file: requirements.yml
 
+  roles:
     - name: Install Nginx
       ansible.builtin.package:
         name: nginx
@@ -16,7 +21,6 @@
         enabled: true
       become: yes
 
-  roles:
     - name: acme
       vars:
         acme_cert_domain: vault.dylanw.net
