@@ -4,3 +4,8 @@
   community.general.ansible_galaxy_install:
     type: both
     requirements_file: requirements.yml
+
+- name: Install boto3
+  ansible.builtin.package:
+    name: python3-boto3
+    state: present
