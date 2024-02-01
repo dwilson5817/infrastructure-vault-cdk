@@ -1,49 +1,10 @@
 stages:
   - test
-  - authenticate
   - deploy
-  - configure
 
 sast:
   stage: test
 
-aws-auth:
-  id_tokens:
-    GITLAB_OIDC_TOKEN:
-      aud: https://gitlab.dylanw.dev
-  image: gitlab.dylanw.dev:5050/images/nodejs-aws-cli:latest
-  stage: authenticate
-  script:
-    - >
-      printf "AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\nAWS_SESSION_TOKEN=%s"
-      $(aws sts assume-role-with-web-identity
-      --role-arn ${ROLE_ARN}
-      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
-      --web-identity-token ${GITLAB_OIDC_TOKEN}
-      --duration-seconds 3600
-      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
-      --output text)
-      > aws.env
-  artifacts:
-    reports:
-      dotenv: aws.env
-
-cdk-deploy:
-  image: gitlab.dylanw.dev:5050/images/nodejs-aws-cli:latest
-  stage: deploy
-  script:
-    - npm install --progress=false
-    - npm run build
-    - npm run cdk bootstrap
-    - npm run cdk deploy -- --require-approval=never
-
-#ansible-configure:
-#  image: willhallonline/ansible:2.15.2-bullseye
-#  stage: configure
-#  script:
-#    - pip3 install botocore boto3
-#    - ansible-galaxy install -r ansible/requirements.yml
-#    - ansible-playbook -i ansible/inventory.aws_ec2.yml ansible/playbook.yml
-
 include:
   - template: Security/SAST.gitlab-ci.yml
+  - component: gitlab.dylanw.dev/infrastructure/cdk-deployment-base/js-cdk-deploy@v1.0
