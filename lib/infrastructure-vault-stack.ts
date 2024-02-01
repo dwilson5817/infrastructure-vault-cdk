@@ -5,10 +5,16 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 export class InfrastructureVaultStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const cloudflareTokenSecret = new secretsmanager.Secret(this, 'CloudFlareTokenSecret', {
+      secretName: 'CloudFlareToken',
+      secretStringValue: cdk.SecretValue.unsafePlainText(process.env.CLOUDFLARE_TOKEN!),
+    });
 
     const defaultVpc = ec2.Vpc.fromLookup(this, 'VPC', { isDefault: true })
 
@@ -42,6 +48,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
     })
 
     cdk.Tags.of(instance).add('Role', 'VaultServer');
+    cloudflareTokenSecret.grantRead(instance);
 
     const table = new dynamodb.TableV2(this, 'VaultStorage', {
       partitionKey: { name: 'Path', type: dynamodb.AttributeType.STRING },
@@ -95,7 +102,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
             "playbook.yml"
         ],
         ExtraVariables: [
-            `vault_storage_dynamodb_table_name=${ table.tableName }`
+            `vault_storage_dynamodb_table_name=${ table.tableName } cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName }`
         ],
       }
     });

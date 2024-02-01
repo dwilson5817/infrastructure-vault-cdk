@@ -73,6 +73,7 @@
         record: "{{ challenge.key }}"
         type: TXT
         value: "{{ ' '.join(challenge.value) }}"
+        api_token: "{{ lookup('amazon.aws.aws_secret', cloudflare_token_secret_name) }}"
       loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
       loop_control:
         loop_var: challenge
@@ -127,9 +128,9 @@
         type: TXT
         value: "{{ ' '.join(challenge.value) }}"
         state: absent
+        api_token: "{{ lookup('amazon.aws.aws_secret', cloudflare_token_secret_name) }}"
       loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
       loop_control:
         loop_var: challenge
       when: dns_challenge is changed
       delegate_to: 127.0.0.1
-

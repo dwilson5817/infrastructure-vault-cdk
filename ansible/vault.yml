@@ -71,4 +71,5 @@
     record: vault
     type: A
     value: "{{ public_ip_address }}"
+    api_token: "{{ lookup('amazon.aws.aws_secret', cloudflare_token_secret_name) }}"
   delegate_to: 127.0.0.1
