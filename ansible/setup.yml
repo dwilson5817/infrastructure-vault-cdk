@@ -1,8 +1,6 @@
 ---
 
-- hosts: all
-  tasks:
-    - name: Install collections and roles from Galaxy
-      community.general.ansible_galaxy_install:
-        type: both
-        requirements_file: requirements.yml
+- name: Install collections and roles from Galaxy
+  community.general.ansible_galaxy_install:
+    type: both
+    requirements_file: requirements.yml

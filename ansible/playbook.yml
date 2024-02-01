@@ -1,4 +1,11 @@
 ---
 
-- import_playbook: setup.yml
-- import_playbook: vault.yml
+- hosts: all
+  tasks:
+    - name: Setup Ansible environment by installing roles
+      ansible.builtin.include_tasks:
+        file: setup.yml
+
+    - name: Install and configure HashiCorp Vault
+      ansible.builtin.include_tasks:
+        file: vault.yml
