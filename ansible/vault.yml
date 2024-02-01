@@ -65,6 +65,12 @@
   ansible.builtin.include_role:
    name: vault
 
+- name: Get public IP address
+  ansible.builtin.uri:
+    url: http://checkip.amazonaws.com/
+    return_content: true
+  register: public_ip_address
+
 - name: Create A record for on CloudFlare DNS
   community.general.cloudflare_dns:
     zone: dylanw.net
