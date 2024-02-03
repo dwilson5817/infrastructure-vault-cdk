@@ -13,14 +13,11 @@ export class InfrastructureVaultStack extends cdk.Stack {
     super(scope, id, props);
 
     const vaultInstanceRole = new iam.Role(this, 'VaultInstanceRole', {
-      assumedBy: new iam.CompositePrincipal(
-          new iam.ServicePrincipal('ec2.amazonaws.com'),
-          new iam.ServicePrincipal('ssm.amazonaws.com'),
-      ),
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
 
     vaultInstanceRole.addManagedPolicy(
-        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedEC2InstanceDefaultPolicy')
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
     );
 
     const cloudflareTokenSecret = new secretsmanager.Secret(this, 'CloudFlareTokenSecret', {
