@@ -11,7 +11,7 @@
     state: started
     enabled: true
 
-- name: Pass variables to role
+- name: Generate Let's Encrypt certificate using ACME
   ansible.builtin.include_role:
     name: acme
   vars:
@@ -61,7 +61,7 @@
                       - field: X-Forwarded-Proto
                         value: https
 
-- name: Pass variables to role
+- name: Install HashiCorp Vault
   ansible.builtin.include_role:
    name: vault
 
