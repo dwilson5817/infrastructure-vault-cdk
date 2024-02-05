@@ -83,6 +83,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     const vaultUnsealKey = new kms.Key(this, 'VaultUnsealKey');
 
+    vaultUnsealKey.grant(instance, 'DescribeKey');
     vaultUnsealKey.grantEncryptDecrypt(instance);
 
     new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
