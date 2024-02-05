@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as kms from 'aws-cdk-lib/aws-kms';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
@@ -80,6 +81,10 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     table.grantFullAccess(vaultInstanceRole)
 
+    const vaultUnsealKey = new kms.Key(this, 'VaultUnsealKey');
+
+    vaultUnsealKey.grantEncryptDecrypt(instance);
+
     new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
       name: 'AWS-ApplyAnsiblePlaybooks',
       targets: [{
@@ -108,6 +113,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
         ],
         ExtraVariables: [
             `vault_storage_dynamodb_table_name=${ table.tableName } ` +
+            `vault_unseal_kms_key_id=${ vaultUnsealKey.keyId } ` +
             `cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName } ` +
             `current_region=${ cdk.Stack.of(this).region }`
         ],
