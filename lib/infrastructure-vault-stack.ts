@@ -46,11 +46,11 @@ export class InfrastructureVaultStack extends cdk.Stack {
         'Allows HTTPS access from Internet'
     )
 
-    const instance = new ec2.Instance(this, 'VaultServerInstance1', {
+    const instance = new ec2.Instance(this, 'VaultServerInstance', {
       vpc: defaultVpc,
       securityGroup: securityGroup,
       role: vaultInstanceRole,
-      instanceName: 'vault-instance-1',
+      instanceName: 'vault-server',
       instanceType: ec2.InstanceType.of(
           ec2.InstanceClass.T2,
           ec2.InstanceSize.MICRO
