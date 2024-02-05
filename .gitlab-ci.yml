@@ -7,4 +7,4 @@ sast:
 
 include:
   - template: Security/SAST.gitlab-ci.yml
-  - component: gitlab.dylanw.dev/infrastructure/cdk-deployment-base/js-cdk-deploy@v1.0
+  - component: gitlab.dylanw.dev/infrastructure/cdk-deployment-base/js-cdk-deploy@v1.2
