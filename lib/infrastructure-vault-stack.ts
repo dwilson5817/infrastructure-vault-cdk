@@ -46,6 +46,12 @@ export class InfrastructureVaultStack extends cdk.Stack {
         'Allows HTTPS access from Internet'
     )
 
+    securityGroup.addIngressRule(
+        ec2.Peer.anyIpv4(),
+        ec2.Port.tcp(8250),
+        'Allows OIDC login callback from Internet'
+    )
+
     const instance = new ec2.Instance(this, 'VaultServerInstance', {
       vpc: defaultVpc,
       securityGroup: securityGroup,
