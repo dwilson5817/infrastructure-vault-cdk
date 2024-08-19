@@ -64,6 +64,9 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     const ansibleExecutionLogsBucket = new s3.Bucket(this, 'AnsibleExecutionLogsBucket', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      lifecycleRules: [
+        { expiration: cdk.Duration.days(90) }
+      ]
     });
 
     ansibleExecutionLogsBucket.grantPut(vaultInstanceRole)
