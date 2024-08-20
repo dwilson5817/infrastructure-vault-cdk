@@ -107,6 +107,8 @@
       when: dns_challenge is changed
       register: result
       until: result is not failed
+      notify:
+        - (Handler) Run NGINX
 
     - name: Set certificate owner and group
       ansible.builtin.file:
