@@ -50,7 +50,6 @@ export class InfrastructureVaultStack extends cdk.Stack {
       vpc: defaultVpc,
       securityGroup: securityGroup,
       role: vaultInstanceRole,
-      instanceName: 'vault-server',
       instanceType: ec2.InstanceType.of(
           ec2.InstanceClass.T2,
           ec2.InstanceSize.MICRO
