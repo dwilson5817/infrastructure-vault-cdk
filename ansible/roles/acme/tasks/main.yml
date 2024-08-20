@@ -107,8 +107,6 @@
       when: dns_challenge is changed
       register: result
       until: result is not failed
-      notify:
-        - (Handler) Run NGINX
 
     - name: Set certificate owner and group
       ansible.builtin.file:
@@ -121,6 +119,12 @@
         - "{{ acme_location }}/certs/{{ acme_cert_domain }}/fullchain.pem"
       loop_control:
         loop_var: file
+
+    - name: Reload NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      when: result is changed
 
   always:
     - name: "Delete TXT record(s) for {{ acme_cert_domain }} from CloudFlare DNS"
