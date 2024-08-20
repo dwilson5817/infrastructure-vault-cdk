@@ -120,7 +120,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
             `current_region=${ cdk.Stack.of(this).region }`
         ],
       },
-      scheduleExpression: 'rate(3 hours)'
+      scheduleExpression: 'rate(1 day)'
     });
   }
 }
