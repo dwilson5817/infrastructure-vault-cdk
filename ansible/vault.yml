@@ -1,5 +1,10 @@
 ---
 
+- name: Upgrade all packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+
 - name: Install Nginx
   ansible.builtin.package:
     name: nginx

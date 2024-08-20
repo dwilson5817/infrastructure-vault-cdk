@@ -5,7 +5,11 @@
     type: both
     requirements_file: requirements.yml
 
-- name: Install boto3
+- name: Install required Python modules
   ansible.builtin.package:
-    name: python3-boto3
+    name:
+      # Required by amazon.aws.secretsmanager_secret lookup
+      - python3-boto3
+      # Required by ansible.builtin.dnf module
+      - python3-dnf
     state: present
