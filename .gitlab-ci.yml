@@ -1,10 +1,2 @@
-stages:
-  - test
-  - deploy
-
-sast:
-  stage: test
-
 include:
-  - template: Security/SAST.gitlab-ci.yml
-  - component: gitlab.dylanw.dev/infrastructure/cdk-deployment-base/js-cdk-deploy@v1.2
+  - component: gitlab.dylanw.dev/dylan/cdk-deployment-base/js-cdk-deploy@1.0.0
