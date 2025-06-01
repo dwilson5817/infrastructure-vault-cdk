@@ -1,2 +1,7 @@
+collections:
+  - name: community.general
+    version: 9.4.0
+
 roles:
 - name: nginxinc.nginx_config
+  version: 0.7.1
