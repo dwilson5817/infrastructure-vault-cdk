@@ -4,6 +4,7 @@
   community.general.ansible_galaxy_install:
     type: both
     requirements_file: requirements.yml
+    force: true
 
 - name: Install required Python modules
   ansible.builtin.package:
