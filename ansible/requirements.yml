@@ -1,4 +1,8 @@
 collections:
+- name: community.dns
+  version: 3.2.4
+- name: community.crypto
+  version: 2.26.1
 - name: community.general
   version: 10.6.0
 
