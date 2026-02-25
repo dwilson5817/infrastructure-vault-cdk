@@ -1,2 +1,2 @@
 include:
-  - component: $CI_SERVER_FQDN/infrastructure/cdk-deployment-base/js-cdk-deploy@1.0.0
+  - component: $CI_SERVER_FQDN/infrastructure/cdk-deployment-base/js-cdk-deploy@1.1.3
