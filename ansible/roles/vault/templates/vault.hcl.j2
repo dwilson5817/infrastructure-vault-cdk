@@ -10,7 +10,7 @@ listener "tcp" {
 
 seal "awskms" {
     region     = "eu-west-1"
-    kms_key_id = "{{ vault_unseal_kms_key_id }}"
+    kms_key_id = "alias/vault-unseal-key"
 }
 
 api_addr          = "http://127.0.0.1:8200"

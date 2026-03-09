@@ -82,7 +82,9 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     table.grantFullAccess(vaultInstanceRole)
 
-    const vaultUnsealKey = new kms.Key(this, 'VaultUnsealKey');
+    const vaultUnsealKey = new kms.Key(this, 'VaultUnsealKey', {
+      alias: 'vault-unseal-key'
+    });
 
     vaultUnsealKey.grant(instance, 'kms:DescribeKey');
     vaultUnsealKey.grantEncryptDecrypt(instance);
@@ -115,9 +117,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
         ],
         ExtraVariables: [
             `vault_storage_dynamodb_table_name=${ table.tableName } ` +
-            `vault_unseal_kms_key_id=${ vaultUnsealKey.keyId } ` +
-            `cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName } ` +
-            `current_region=${ cdk.Stack.of(this).region }`
+            `cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName } `
         ],
       },
       scheduleExpression: 'rate(1 day)'
