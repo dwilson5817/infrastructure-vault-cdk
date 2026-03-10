@@ -75,6 +75,19 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     const asset = new s3asset.Asset(this, 'BundledAsset', {
       path: './ansible',
+      bundling: {
+        image: cdk.DockerImage.fromRegistry('python:3.14-trixie'),
+        command: [
+          'bash',
+          '-lc',
+          [
+            'pip install --no-cache-dir -r /asset-input/requirements.txt',
+            'cp -r /asset-input/. /asset-output',
+            'ansible-galaxy collection install --force -r /asset-output/requirements.yml -p /asset-output/collections',
+            'ansible-galaxy role install --force -r /asset-output/requirements.yml -p /asset-output/roles',
+          ].join(' && '),
+        ],
+      },
     });
 
     asset.bucket.grantRead(vaultInstanceRole)

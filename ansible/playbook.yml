@@ -5,7 +5,7 @@
     - name: Gather EC2 metadata facts
       amazon.aws.ec2_metadata_facts:
 
-    - name: Setup Ansible environment by installing roles
+    - name: Install required system packages
       ansible.builtin.include_tasks:
         file: setup.yml
 
