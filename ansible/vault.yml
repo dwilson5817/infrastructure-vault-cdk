@@ -82,6 +82,6 @@
     record: vault
     type: A
     value: "{{ ansible_ec2_public_ipv4 }}"
-    api_token: "{{ lookup('amazon.aws.aws_secret', cloudflare_token_secret_name, region=ansible_ec2_placement_region) }}"
+    api_token: "{{ lookup('amazon.aws.aws_secret', 'CloudFlareToken', region=ansible_ec2_placement_region) }}"
     solo: yes
   delegate_to: 127.0.0.1

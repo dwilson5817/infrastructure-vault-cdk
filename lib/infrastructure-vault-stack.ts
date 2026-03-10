@@ -141,8 +141,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
             "playbook.yml"
         ],
         ExtraVariables: [
-            `vault_storage_dynamodb_table_name=${ table.tableName } ` +
-            `cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName }`
+            `vault_storage_dynamodb_table_name=${ table.tableName }`
         ],
       },
       scheduleExpression: 'rate(1 day)'
