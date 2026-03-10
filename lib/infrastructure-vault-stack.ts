@@ -55,7 +55,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
       securityGroup: securityGroup,
       role: vaultInstanceRole,
       instanceType: ec2.InstanceType.of(
-          ec2.InstanceClass.T2,
+          ec2.InstanceClass.T4G,
           ec2.InstanceSize.MICRO
       ),
       machineImage: new ec2.AmazonLinuxImage({
