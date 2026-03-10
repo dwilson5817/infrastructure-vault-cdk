@@ -154,12 +154,12 @@ export class InfrastructureVaultStack extends cdk.Stack {
         namespace: 'AWS/SSM-RunCommand',
         metricName: 'CommandsFailed',
         statistic: 'Sum',
-        period: cdk.Duration.minutes(5),
+        period: cdk.Duration.hours(24),
       }),
       threshold: 1,
       evaluationPeriods: 1,
-      datapointsToAlarm: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
     });
 
     runCommandFailureAlarm.addAlarmAction(
