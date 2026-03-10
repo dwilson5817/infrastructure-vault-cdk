@@ -140,9 +140,6 @@ export class InfrastructureVaultStack extends cdk.Stack {
       metric: new cloudwatch.Metric({
         namespace: 'AWS/SSM-RunCommand',
         metricName: 'CommandsFailed',
-        dimensionsMap: {
-          DocumentName: 'AWS-ApplyAnsiblePlaybooks',
-        },
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),
       }),
