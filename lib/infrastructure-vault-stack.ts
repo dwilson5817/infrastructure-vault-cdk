@@ -1,9 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as kms from 'aws-cdk-lib/aws-kms';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
@@ -89,6 +93,14 @@ export class InfrastructureVaultStack extends cdk.Stack {
     vaultUnsealKey.grant(instance, 'kms:DescribeKey');
     vaultUnsealKey.grantEncryptDecrypt(instance);
 
+    const runCommandFailureTopic = new sns.Topic(this, 'RunCommandFailureTopic', {
+      displayName: 'SSM RunCommand Failure Notifications',
+    });
+
+    runCommandFailureTopic.addSubscription(
+      new subscriptions.EmailSubscription(process.env.SNS_RUN_COMMAND_FAILURE_TOPIC_NOTIFICATION_EMAIL!)
+    );
+
     new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
       name: 'AWS-ApplyAnsiblePlaybooks',
       targets: [{
@@ -122,5 +134,26 @@ export class InfrastructureVaultStack extends cdk.Stack {
       },
       scheduleExpression: 'rate(1 day)'
     });
+
+    const runCommandFailureAlarm = new cloudwatch.Alarm(this, 'RunCommandFailureAlarm', {
+      alarmDescription: 'Triggers when the Vault SSM RunCommand execution fails',
+      metric: new cloudwatch.Metric({
+        namespace: 'AWS/SSM-RunCommand',
+        metricName: 'CommandsFailed',
+        dimensionsMap: {
+          DocumentName: 'AWS-ApplyAnsiblePlaybooks',
+        },
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    runCommandFailureAlarm.addAlarmAction(
+      new cloudwatchActions.SnsAction(runCommandFailureTopic)
+    );
   }
 }
