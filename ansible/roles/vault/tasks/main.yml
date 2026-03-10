@@ -20,9 +20,19 @@
     name: "{{ vault_install_prerequisites }}"
     update_cache: yes
 
+- name: Set Vault architecture fact
+  ansible.builtin.set_fact:
+    vault_arch: "{{ arch_map[ansible_architecture] | default(ansible_architecture) }}"
+  vars:
+    arch_map:
+      x86_64: "amd64"
+      aarch64: "arm64"
+      armv7l: "arm"
+      i386: "386"
+
 - name: Download and unzip archive
   ansible.builtin.unarchive:
-    src: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip"
+    src: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_{{ vault_arch }}.zip"
     dest: /usr/local/bin
     owner: "{{ vault_user }}"
     group: "{{ vault_group }}"
