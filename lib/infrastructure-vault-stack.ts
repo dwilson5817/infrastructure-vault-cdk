@@ -129,7 +129,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
         ],
         ExtraVariables: [
             `vault_storage_dynamodb_table_name=${ table.tableName } ` +
-            `cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName } `
+            `cloudflare_token_secret_name=${ cloudflareTokenSecret.secretName }`
         ],
       },
       scheduleExpression: 'rate(1 day)'
