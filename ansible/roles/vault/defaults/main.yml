@@ -1,6 +1,6 @@
 ---
 
-vault_version: 1.19.5
+vault_version: 1.21.4
 vault_install_prerequisites:
 - unzip
 vault_user: vault
