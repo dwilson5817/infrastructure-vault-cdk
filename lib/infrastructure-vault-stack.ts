@@ -25,6 +25,12 @@ export class InfrastructureVaultStack extends cdk.Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
     );
 
+    // Allow the EC2 instance to assume the VaultVerificationRole in the backups account
+    vaultInstanceRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['sts:AssumeRole'],
+      resources: ['arn:aws:iam::581807542937:role/VaultVerificationRole'],
+    }));
+
     const cloudflareTokenSecret = new secretsmanager.Secret(this, 'CloudFlareTokenSecret', {
       secretName: 'CloudFlareToken',
       secretStringValue: cdk.SecretValue.unsafePlainText(process.env.CLOUDFLARE_TOKEN!),
@@ -63,12 +69,6 @@ export class InfrastructureVaultStack extends cdk.Stack {
         cpuType: ec2.AmazonLinuxCpuType.ARM_64
       }),
     })
-
-    // Allow the EC2 instance to assume the VaultVerificationRole in the backups account
-    instance.role.addToPolicy(new iam.PolicyStatement({
-      actions: ['sts:AssumeRole'],
-      resources: ['arn:aws:iam::581807542937:role/VaultVerificationRole'],
-    }));
 
     cdk.Tags.of(instance).add('Role', 'VaultServer');
 
