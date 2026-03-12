@@ -64,6 +64,12 @@ export class InfrastructureVaultStack extends cdk.Stack {
       }),
     })
 
+    // Allow the EC2 instance to assume the VaultVerificationRole in the backups account
+    instance.role.addToPolicy(new iam.PolicyStatement({
+      actions: ['sts:AssumeRole'],
+      resources: ['arn:aws:iam::581807542937:role/VaultVerificationRole'],
+    }));
+
     cdk.Tags.of(instance).add('Role', 'VaultServer');
 
     const ansibleExecutionLogsBucket = new s3.Bucket(this, 'AnsibleExecutionLogsBucket', {
