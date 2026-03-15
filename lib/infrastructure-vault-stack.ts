@@ -28,7 +28,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
     // Allow the EC2 instance to assume the VaultVerificationRole in the backups account
     vaultInstanceRole.addToPolicy(new iam.PolicyStatement({
       actions: ['sts:AssumeRole'],
-      resources: ['arn:aws:iam::581807542937:role/InfrastructureBackupsCdkS-VaultVerificationRole6E52-z8wuil31F02g'],
+      resources: ['arn:aws:iam::581807542937:role/InfrastructureBackupsCdkS-VaultVerificationRole6E52-UMM4dkV20joI'],
     }));
 
     const cloudflareTokenSecret = new secretsmanager.Secret(this, 'CloudFlareTokenSecret', {
