@@ -30,7 +30,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
       actions: ['sts:AssumeRole'],
       resources: [
         'arn:aws:iam::581807542937:role/InfrastructureBackupsCdkS-VaultVerificationRole6E52-UMM4dkV20joI',
-        'arn:aws:iam::303040220222:role/DmarcAnalyserCdkStack-VaultVerificationRole6E5252AC-I2FA0jrFkY1A'
+        'arn:aws:iam::303040220222:role/DmarcAnalyserCdkStack-VaultVerificationRole6E5252AC-xg8IYCfTlDCK'
       ],
     }))
 
