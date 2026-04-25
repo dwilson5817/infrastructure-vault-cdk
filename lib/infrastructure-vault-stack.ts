@@ -105,6 +105,9 @@ export class InfrastructureVaultStack extends cdk.Stack {
     const table = new dynamodb.TableV2(this, 'VaultStorage', {
       partitionKey: { name: 'Path', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'Key', type: dynamodb.AttributeType.STRING },
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: true,
+      },
     })
 
     table.grantFullAccess(vaultInstanceRole)
