@@ -68,7 +68,7 @@
       register: dns_challenge
 
     - name: "Create TXT record(s) for {{ acme_cert_domain }} on Route 53 to complete challenge"
-      amazon.aws.route53_record:
+      amazon.aws.route53:
         hosted_zone_id: "{{ route53_hosted_zone_id }}"
         record: "{{ challenge.key }}"
         type: TXT
@@ -132,7 +132,7 @@
 
   always:
     - name: "Delete TXT record(s) for {{ acme_cert_domain }} from Route 53"
-      amazon.aws.route53_record:
+      amazon.aws.route53:
         hosted_zone_id: "{{ route53_hosted_zone_id }}"
         record: "{{ challenge.key }}"
         type: TXT
