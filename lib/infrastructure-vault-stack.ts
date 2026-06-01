@@ -9,7 +9,7 @@ import * as kms from 'aws-cdk-lib/aws-kms';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
-// import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
 
@@ -144,39 +144,39 @@ export class InfrastructureVaultStack extends cdk.Stack {
       new subscriptions.EmailSubscription(process.env.SNS_RUN_COMMAND_FAILURE_TOPIC_NOTIFICATION_EMAIL!)
     );
 
-    // new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
-    //   name: 'AWS-ApplyAnsiblePlaybooks',
-    //   targets: [{
-    //     key: 'tag:Role',
-    //     values: [
-    //         'VaultServer'
-    //     ],
-    //   }],
-    //   outputLocation: {
-    //     s3Location: {
-    //       outputS3BucketName: ansibleExecutionLogsBucket.bucketName,
-    //     },
-    //   },
-    //   parameters: {
-    //     SourceType: [
-    //         "S3"
-    //     ],
-    //     SourceInfo: [
-    //         `{ "path": "${ asset.httpUrl }" }`
-    //     ],
-    //     InstallDependencies: [
-    //         "True"
-    //     ],
-    //     PlaybookFile: [
-    //         "playbook.yml"
-    //     ],
-    //     ExtraVariables: [
-    //         `vault_storage_dynamodb_table_name=${ table.tableName } ` +
-    //         `route53_hosted_zone_id=${ hostedZone.hostedZoneId }`
-    //     ],
-    //   },
-    //   scheduleExpression: 'rate(1 day)'
-    // });
+    new ssm.CfnAssociation(this, 'ConfigureVaultAssociation', {
+      name: 'AWS-ApplyAnsiblePlaybooks',
+      targets: [{
+        key: 'tag:Role',
+        values: [
+            'VaultServer'
+        ],
+      }],
+      outputLocation: {
+        s3Location: {
+          outputS3BucketName: ansibleExecutionLogsBucket.bucketName,
+        },
+      },
+      parameters: {
+        SourceType: [
+            "S3"
+        ],
+        SourceInfo: [
+            `{ "path": "${ asset.httpUrl }" }`
+        ],
+        InstallDependencies: [
+            "True"
+        ],
+        PlaybookFile: [
+            "playbook.yml"
+        ],
+        ExtraVariables: [
+            `vault_storage_dynamodb_table_name=${ table.tableName } ` +
+            `route53_hosted_zone_id=${ hostedZone.hostedZoneId }`
+        ],
+      },
+      scheduleExpression: 'rate(1 day)'
+    });
 
     const runCommandFailureAlarm = new cloudwatch.Alarm(this, 'RunCommandFailureAlarm', {
       alarmDescription: 'Triggers when the Vault SSM RunCommand execution fails',
