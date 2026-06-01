@@ -1,8 +1,8 @@
-# Vault
+# Vault CDK
 
-![Pipeline status badge](https://gitlab.dylanw.dev/infrastructure/vault/badges/main/pipeline.svg)
+![Pipeline status badge](https://gitlab.dylanw.dev/infrastructure/vault-cdk/badges/main/pipeline.svg)
 
-A CDK application which creates the infrastructure to deploy a very simple installation of HashiCorp Vault to AWS.
+A CDK application that creates the infrastructure to deploy a very simple installation of HashiCorp Vault to AWS.
 
 This project creates the following resources:
 
