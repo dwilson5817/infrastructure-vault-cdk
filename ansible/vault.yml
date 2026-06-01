@@ -22,7 +22,6 @@
   vars:
     acme_cert_domain: vault.dylanw.net
     acme_contact: admin@dylanw.net
-    cloudflare_zone: dylanw.net
 
 - name: Pass variables to role
   ansible.builtin.include_role:
@@ -76,12 +75,12 @@
     return_content: true
   register: public_ip_address
 
-- name: Create A record for on CloudFlare DNS
-  community.general.cloudflare_dns:
-    zone: dylanw.net
-    record: vault
+- name: Create A record for vault.dylanw.net in Route 53
+  amazon.aws.route53_record:
+    hosted_zone_id: "{{ route53_hosted_zone_id }}"
+    record: vault.dylanw.net
     type: A
     value: "{{ ansible_ec2_public_ipv4 }}"
-    api_token: "{{ lookup('amazon.aws.aws_secret', 'CloudFlareToken', region=ansible_ec2_placement_region) }}"
-    solo: yes
-  delegate_to: 127.0.0.1
+    state: present
+    overwrite: true
+    ttl: 300

@@ -67,18 +67,22 @@
         remaining_days: 60
       register: dns_challenge
 
-    - name: "Create TXT record(s) for {{ acme_cert_domain }} on CloudFlare DNS to complete challenge"
-      community.general.cloudflare_dns:
-        zone: "{{ cloudflare_zone }}"
+    - name: "Create TXT record(s) for {{ acme_cert_domain }} on Route 53 to complete challenge"
+      amazon.aws.route53_record:
+        hosted_zone_id: "{{ route53_hosted_zone_id }}"
         record: "{{ challenge.key }}"
         type: TXT
-        value: "{{ ' '.join(challenge.value) }}"
-        api_token: "{{ lookup('amazon.aws.aws_secret', 'CloudFlareToken', region=ansible_ec2_placement_region) }}"
+        # Route 53 requires TXT values to be explicitly quoted (i.e. "token")
+        # Prepend and append " in two steps to avoid backreference escaping
+        value: "{{ challenge.value | map('regex_replace', '^', '\"') | map('regex_replace', '$', '\"') | list }}"
+        state: present
+        overwrite: true
+        ttl: 60
+        wait: true
       loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
       loop_control:
         loop_var: challenge
       when: dns_challenge is changed
-      delegate_to: 127.0.0.1
 
     - name: Wait for a TXT entry to appear
       community.dns.wait_for_txt:
@@ -127,16 +131,17 @@
       when: result is changed
 
   always:
-    - name: "Delete TXT record(s) for {{ acme_cert_domain }} from CloudFlare DNS"
-      community.general.cloudflare_dns:
-        zone: "{{ cloudflare_zone }}"
+    - name: "Delete TXT record(s) for {{ acme_cert_domain }} from Route 53"
+      amazon.aws.route53_record:
+        hosted_zone_id: "{{ route53_hosted_zone_id }}"
         record: "{{ challenge.key }}"
         type: TXT
-        value: "{{ ' '.join(challenge.value) }}"
+        # Route 53 requires TXT values to be explicitly quoted (i.e. "token")
+        # Prepend and append " in two steps to avoid backreference escaping
+        value: "{{ challenge.value | map('regex_replace', '^', '\"') | map('regex_replace', '$', '\"') | list }}"
         state: absent
-        api_token: "{{ lookup('amazon.aws.aws_secret', 'CloudFlareToken', region=ansible_ec2_placement_region) }}"
+        ttl: 60
       loop: "{{ dns_challenge.challenge_data_dns | dict2items }}"
       loop_control:
         loop_var: challenge
       when: dns_challenge is changed
-      delegate_to: 127.0.0.1

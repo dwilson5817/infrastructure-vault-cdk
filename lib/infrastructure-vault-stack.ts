@@ -6,16 +6,27 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as kms from 'aws-cdk-lib/aws-kms';
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 export class InfrastructureVaultStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const hostedZone = new route53.HostedZone(this, 'HostedZone', {
+      zoneName: 'vault.dylanw.net',
+    });
+
+    new route53.CaaRecord(this, 'AcmCaaRecord', {
+      zone: hostedZone,
+      values: [
+        { flag: 0, tag: route53.CaaTag.ISSUE, value: 'letsencrypt.org' },
+      ],
+    });
 
     const vaultInstanceRole = new iam.Role(this, 'VaultInstanceRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
@@ -34,12 +45,18 @@ export class InfrastructureVaultStack extends cdk.Stack {
       ],
     }))
 
-    const cloudflareTokenSecret = new secretsmanager.Secret(this, 'CloudFlareTokenSecret', {
-      secretName: 'CloudFlareToken',
-      secretStringValue: cdk.SecretValue.unsafePlainText(process.env.CLOUDFLARE_TOKEN!),
-    });
+    vaultInstanceRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'route53:ChangeResourceRecordSets',
+        'route53:ListResourceRecordSets',
+      ],
+      resources: [`arn:aws:route53:::hostedzone/${hostedZone.hostedZoneId}`],
+    }));
 
-    cloudflareTokenSecret.grantRead(vaultInstanceRole);
+    vaultInstanceRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['route53:GetChange'],
+      resources: ['arn:aws:route53:::change/*'],
+    }));
 
     const defaultVpc = ec2.Vpc.fromLookup(this, 'VPC', { isDefault: true })
 
@@ -154,7 +171,8 @@ export class InfrastructureVaultStack extends cdk.Stack {
             "playbook.yml"
         ],
         ExtraVariables: [
-            `vault_storage_dynamodb_table_name=${ table.tableName }`
+            `vault_storage_dynamodb_table_name=${ table.tableName } ` +
+            `route53_hosted_zone_id=${ hostedZone.hostedZoneId }`
         ],
       },
       scheduleExpression: 'rate(1 day)'
