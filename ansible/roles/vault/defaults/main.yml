@@ -6,3 +6,5 @@ vault_install_prerequisites:
 vault_user: vault
 vault_group: vault
 vault_config_path: /etc/vault.hcl
+# Used by the file audit device, which is configured in Vault itself. Vault will not unseal if it can't write here.
+vault_log_path: /var/log/vault

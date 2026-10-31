@@ -58,6 +58,14 @@
     owner: "{{ vault_user }}"
     group: "{{ vault_group }}"
 
+- name: Create log directory
+  ansible.builtin.file:
+    path: "{{ vault_log_path }}"
+    state: directory
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: '0750'
+
 - name: Enable and start service
   ansible.builtin.service:
     name: vault
