@@ -11,6 +11,8 @@ listener "tcp" {
 seal "awskms" {
     region     = "eu-west-1"
     kms_key_id = "alias/vault-unseal-key"
+    # The instance has no public IPv4 address, so use the dual-stack endpoint
+    endpoint   = "https://kms.eu-west-1.api.aws"
 }
 
 api_addr          = "http://127.0.0.1:8200"

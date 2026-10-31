@@ -1,0 +1,19 @@
+---
+
+# Downloaded into the asset by bundle.yml
+cloudflared_version: 2026.10.3
+# From the "SHA256 Checksums" section of the release notes, update with cloudflared_version
+cloudflared_checksums:
+  arm64: 89297ebfb9e8c99c0dc013a1140601453cf3798d8306c5591651f4a3f5210be8
+  amd64: 053b80b0a23031a038fdbf3c073f59f82b8f1f152aa67971d7383ffafc0dbab0
+cloudflared_user: cloudflared
+cloudflared_group: cloudflared
+cloudflared_config_path: /etc/cloudflared
+# The instance has no public IPv4 address, so only connect to Cloudflare over IPv6. The
+# default (auto) follows the resolver, which may pick IPv4 addresses that are unreachable.
+cloudflared_edge_ip_version: "6"
+
+# Required, set by the playbook:
+# bundle_binaries_path
+# Required, set by the including role:
+# cloudflared_credentials (tunnel credentials JSON), cloudflared_hostname, cloudflared_service

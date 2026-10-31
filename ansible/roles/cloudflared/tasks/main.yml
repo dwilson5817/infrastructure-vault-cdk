@@ -1,0 +1,90 @@
+---
+
+- name: Create group
+  ansible.builtin.group:
+    name: "{{ cloudflared_group }}"
+    system: true
+
+- name: Create user
+  ansible.builtin.user:
+    name: "{{ cloudflared_user }}"
+    group: "{{ cloudflared_group }}"
+    system: true
+    shell: /sbin/nologin
+    create_home: false
+    state: present
+
+# The binary is downloaded into the asset by bundle.yml
+- name: Install binary
+  ansible.builtin.copy:
+    src: "{{ bundle_binaries_path }}/cloudflared"
+    dest: /usr/local/bin/cloudflared
+    remote_src: true
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+  notify: cloudflared_restart
+
+- name: Create config directory
+  ansible.builtin.file:
+    path: "{{ cloudflared_config_path }}"
+    state: directory
+    owner: root
+    group: "{{ cloudflared_group }}"
+    mode: u=rwx,g=rx,o=
+
+# Ansible may already have converted the JSON string from SSM into a dictionary
+- name: Parse tunnel credentials
+  ansible.builtin.set_fact:
+    cloudflared_credentials_data: "{{ cloudflared_credentials if cloudflared_credentials is mapping else cloudflared_credentials | from_json }}"
+  no_log: true
+
+- name: Write tunnel credentials
+  ansible.builtin.copy:
+    content: "{{ cloudflared_credentials_data | to_json }}"
+    dest: "{{ cloudflared_config_path }}/credentials.json"
+    owner: root
+    group: "{{ cloudflared_group }}"
+    mode: u=rw,g=r,o=
+  no_log: true
+  notify: cloudflared_restart
+
+- name: Create config file
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ cloudflared_config_path }}/config.yml"
+    owner: root
+    group: "{{ cloudflared_group }}"
+    mode: u=rw,g=r,o=
+  vars:
+    cloudflared_tunnel_id: "{{ cloudflared_credentials_data.TunnelID }}"
+  notify: cloudflared_restart
+
+- name: Validate ingress rules
+  ansible.builtin.command:
+    argv:
+      - /usr/local/bin/cloudflared
+      - tunnel
+      - --config
+      - "{{ cloudflared_config_path }}/config.yml"
+      - ingress
+      - validate
+  changed_when: false
+
+- name: Create service file
+  ansible.builtin.template:
+    src: cloudflared.service.j2
+    dest: /etc/systemd/system/cloudflared.service
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify:
+    - cloudflared_systemd_reload
+    - cloudflared_restart
+
+- name: Enable and start service
+  ansible.builtin.systemd_service:
+    name: cloudflared
+    state: started
+    enabled: true
+    daemon_reload: true

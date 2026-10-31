@@ -1,0 +1,38 @@
+---
+
+# Run while the CDK asset is built (see BundledAsset in the stack), not on the instance.
+# Downloads the release binaries for the instance architecture into the asset, so the
+# instance never needs to reach GitHub, which is not reachable over IPv6. Versions and
+# checksums are taken from the role defaults, so bumping them there rebuilds the asset.
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - roles/cloudflared/defaults/main.yml
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    # Set by the stack: an ec2.InstanceArchitecture value (arm64 or x86_64), and the
+    # directory in the asset output to download to
+    bundle_arch: "{{ lookup('ansible.builtin.env', 'BUNDLE_ARCH') }}"
+    bundle_binaries_path: "{{ lookup('ansible.builtin.env', 'BUNDLE_BINARIES_PATH') }}"
+  tasks:
+    - name: Ensure the architecture is supported
+      ansible.builtin.assert:
+        that: bundle_arch in ['arm64', 'x86_64']
+        fail_msg: "Unsupported architecture '{{ bundle_arch }}'"
+        quiet: true
+
+    - name: Create binaries directory
+      ansible.builtin.file:
+        path: "{{ bundle_binaries_path }}"
+        state: directory
+        mode: u=rwx,g=rx,o=rx
+
+    - name: Download cloudflared
+      ansible.builtin.get_url:
+        url: "https://github.com/cloudflare/cloudflared/releases/download/{{ cloudflared_version }}/cloudflared-linux-{{ cloudflared_arch }}"
+        dest: "{{ bundle_binaries_path }}/cloudflared"
+        checksum: "sha256:{{ cloudflared_checksums[cloudflared_arch] }}"
+        mode: u=rwx,g=rx,o=rx
+      vars:
+        cloudflared_arch: "{{ {'arm64': 'arm64', 'x86_64': 'amd64'}[bundle_arch] }}"

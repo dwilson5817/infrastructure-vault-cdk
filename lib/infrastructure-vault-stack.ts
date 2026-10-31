@@ -6,7 +6,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as kms from 'aws-cdk-lib/aws-kms';
-import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -16,17 +15,6 @@ import * as s3asset from 'aws-cdk-lib/aws-s3-assets';
 export class InfrastructureVaultStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-
-    const hostedZone = new route53.HostedZone(this, 'HostedZone', {
-      zoneName: 'vault.dylanw.net',
-    });
-
-    new route53.CaaRecord(this, 'AcmCaaRecord', {
-      zone: hostedZone,
-      values: [
-        { flag: 0, tag: route53.CaaTag.ISSUE, value: 'letsencrypt.org' },
-      ],
-    });
 
     const vaultInstanceRole = new iam.Role(this, 'VaultInstanceRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
@@ -45,45 +33,88 @@ export class InfrastructureVaultStack extends cdk.Stack {
       ],
     }))
 
+    // Vault configuration and secrets (such as the Cloudflare Tunnel credentials) are created out-of-band (see
+    // README.md). SecureStrings use the AWS managed aws/ssm key, whose key policy already allows decryption via SSM,
+    // so no KMS permissions are needed.
     vaultInstanceRole.addToPolicy(new iam.PolicyStatement({
       actions: [
-        'route53:ChangeResourceRecordSets',
-        'route53:ListResourceRecordSets',
+        'ssm:GetParameter',
+        'ssm:GetParameters',
+        'ssm:GetParametersByPath',
       ],
-      resources: [`arn:aws:route53:::hostedzone/${hostedZone.hostedZoneId}`],
+      resources: [
+        this.formatArn({ service: 'ssm', resource: 'parameter', resourceName: 'vault' }),
+        this.formatArn({ service: 'ssm', resource: 'parameter', resourceName: 'vault/*' }),
+      ],
     }));
 
-    vaultInstanceRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['route53:GetChange'],
-      resources: ['arn:aws:route53:::change/*'],
-    }));
+    // Dual-stack VPC with no NAT gateway: the instance gets a private IPv4 address (free) and a public IPv6
+    // address, so it has no public IPv4 address to pay for and can only reach the internet over IPv6
+    const vpc = new ec2.Vpc(this, 'Vpc', {
+      ipProtocol: ec2.IpProtocol.DUAL_STACK,
+      maxAzs: 1,
+      natGateways: 0,
+      subnetConfiguration: [{
+        name: 'Public',
+        subnetType: ec2.SubnetType.PUBLIC,
+        mapPublicIpOnLaunch: false,
+      }],
+      // Gateway endpoints are free and give IPv4 access to S3 and DynamoDB
+      gatewayEndpoints: {
+        S3: { service: ec2.GatewayVpcEndpointAwsService.S3 },
+        DynamoDB: { service: ec2.GatewayVpcEndpointAwsService.DYNAMODB },
+      },
+    });
 
-    const defaultVpc = ec2.Vpc.fromLookup(this, 'VPC', { isDefault: true })
-
+    // Vault is only reachable through the Cloudflare Tunnel, which only makes outbound connections
     const securityGroup = new ec2.SecurityGroup(
         this,
         'VaultServerSecurityGroup',
         {
-          vpc: defaultVpc,
+          vpc,
           allowAllOutbound: true,
-          securityGroupName: 'VaultServerSecurityGroup',
+          allowAllIpv6Outbound: true,
         }
     )
 
-    securityGroup.addIngressRule(
-        ec2.Peer.anyIpv4(),
-        ec2.Port.tcp(443),
-        'Allows HTTPS access from Internet'
-    )
+    // Shared by the instance and the Ansible asset, which bundles binaries for this architecture
+    const instanceType = ec2.InstanceType.of(
+        ec2.InstanceClass.T4G,
+        ec2.InstanceSize.MICRO
+    );
+
+    // Make the SSM Agent use dual-stack endpoints, so it can reach Systems Manager over IPv6 (they also work over
+    // IPv4). Without this it only uses the IPv4-only endpoints. This must be set before the agent starts, since Ansible
+    // itself is run through the agent, so it is done in a cloud-init bootcmd, which runs on every boot before the
+    // network is online (the agent starts after network-online.target). The config file does not exist by default,
+    // so it is created from the template shipped with the agent if needed. Needs SSM Agent 3.3.3270.0 or later.
+    const ssmAgentConfigPath = '/etc/amazon/ssm/amazon-ssm-agent.json';
+    const enableSsmAgentDualStack = [
+      'import json, os',
+      `path = "${ssmAgentConfigPath}"`,
+      'config = json.load(open(path if os.path.exists(path) else path + ".template"))',
+      'config.setdefault("Agent", {})["UseDualStackEndpoint"] = True',
+      'json.dump(config, open(path, "w"), indent=2)',
+    ].join('; ');
+
+    const userData = new ec2.MultipartUserData();
+    userData.addPart(ec2.MultipartBody.fromRawBody({
+      contentType: 'text/cloud-config; charset="utf-8"',
+      body: [
+        '#cloud-config',
+        'bootcmd:',
+        `  - [python3, -c, '${enableSsmAgentDualStack}']`,
+      ].join('\n'),
+    }));
 
     const instance = new ec2.Instance(this, 'VaultServerInstance', {
-      vpc: defaultVpc,
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       securityGroup: securityGroup,
       role: vaultInstanceRole,
-      instanceType: ec2.InstanceType.of(
-          ec2.InstanceClass.T4G,
-          ec2.InstanceSize.MICRO
-      ),
+      userData,
+      ipv6AddressCount: 1,
+      instanceType,
       machineImage: new ec2.AmazonLinuxImage({
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023,
         cpuType: ec2.AmazonLinuxCpuType.ARM_64
@@ -100,10 +131,17 @@ export class InfrastructureVaultStack extends cdk.Stack {
 
     ansibleExecutionLogsBucket.grantPut(vaultInstanceRole)
 
+    // The release binaries are downloaded by ansible/bundle.yml, because GitHub is not reachable from the instance over
+    // IPv6. The bundling options (including the architecture) are part of the asset hash, so changing the instance
+    // architecture rebuilds the asset.
     const asset = new s3asset.Asset(this, 'BundledAsset', {
       path: './ansible',
       bundling: {
         image: cdk.DockerImage.fromRegistry('python:3.14-trixie'),
+        environment: {
+          BUNDLE_ARCH: instanceType.architecture,
+          BUNDLE_BINARIES_PATH: '/asset-output/binaries',
+        },
         command: [
           'bash',
           '-lc',
@@ -111,7 +149,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
             'pip install --no-cache-dir -r /asset-input/requirements.txt',
             'cp -r /asset-input/. /asset-output',
             'ansible-galaxy collection install --force -r /asset-output/requirements.yml -p /asset-output/collections',
-            'ansible-galaxy role install --force -r /asset-output/requirements.yml -p /asset-output/roles',
+            'ansible-playbook -i localhost, /asset-input/bundle.yml',
           ].join(' && '),
         ],
       },
@@ -171,8 +209,7 @@ export class InfrastructureVaultStack extends cdk.Stack {
             "playbook.yml"
         ],
         ExtraVariables: [
-            `vault_storage_dynamodb_table_name=${ table.tableName } ` +
-            `route53_hosted_zone_id=${ hostedZone.hostedZoneId }`
+            `vault_storage_dynamodb_table_name=${ table.tableName }`
         ],
       },
       scheduleExpression: 'rate(1 day)'

@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+
+tunnel: {{ cloudflared_tunnel_id }}
+credentials-file: {{ cloudflared_config_path }}/credentials.json
+edge-ip-version: "{{ cloudflared_edge_ip_version }}"
+
+ingress:
+  - hostname: {{ cloudflared_hostname }}
+    service: {{ cloudflared_service }}
+  - service: http_status:404

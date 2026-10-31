@@ -1,6 +1,12 @@
 ---
 
 - hosts: all
+  vars:
+    # Release binaries downloaded into the asset by bundle.yml when it is built
+    bundle_binaries_path: "{{ playbook_dir }}/binaries"
+    # Dual-stack (IPv4 and IPv6) endpoints, so AWS APIs can be reached over IPv6. The
+    # default endpoints are IPv4-only.
+    aws_dualstack_domain: "{{ ansible_ec2_placement_region }}.api.aws"
   tasks:
     - name: Gather EC2 metadata facts
       amazon.aws.ec2_metadata_facts:
@@ -8,6 +14,10 @@
     - name: Install required system packages
       ansible.builtin.include_tasks:
         file: setup.yml
+
+    - name: Read Vault parameters from SSM Parameter Store
+      ansible.builtin.include_tasks:
+        file: parameters.yml
 
     - name: Install and configure HashiCorp Vault
       ansible.builtin.include_tasks:

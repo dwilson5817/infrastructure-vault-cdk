@@ -1,0 +1,21 @@
+[Unit]
+Description=Cloudflare Tunnel
+Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ cloudflared_user }}
+Group={{ cloudflared_group }}
+# Updates are managed by bumping cloudflared_version
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel --config {{ cloudflared_config_path }}/config.yml run
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target
