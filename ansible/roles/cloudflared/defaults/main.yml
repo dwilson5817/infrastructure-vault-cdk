@@ -1,11 +1,11 @@
 ---
 
 # Downloaded into the asset by bundle.yml
-cloudflared_version: 2026.10.3
+cloudflared_version: 2026.10.7
 # From the "SHA256 Checksums" section of the release notes, update with cloudflared_version
 cloudflared_checksums:
-  arm64: 89297ebfb9e8c99c0dc013a1140601453cf3798d8306c5591651f4a3f5210be8
-  amd64: 053b80b0a23031a038fdbf3c073f59f82b8f1f152aa67971d7383ffafc0dbab0
+  arm64: 3df43aedc9ff291d1735b5cb576cb97e0b157488796db2e32b28aecabb445775
+  amd64: 1f99fb518b83dec2ba8d870a7cc991d82a77e6196295a3d2754ba17ab9f91872
 cloudflared_user: cloudflared
 cloudflared_group: cloudflared
 cloudflared_config_path: /etc/cloudflared
